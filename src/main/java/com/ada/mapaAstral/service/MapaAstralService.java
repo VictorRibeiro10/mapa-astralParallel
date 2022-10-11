@@ -1,11 +1,11 @@
 package com.ada.mapaAstral.service;
 
-import com.ada.mapaAstral.Enum.Signo;
+import com.ada.mapaAstral.enums.Signo;
+import com.ada.mapaAstral.model.MapaQuantico;
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
-import java.util.Set;
 
 public class MapaAstralService {
 
@@ -66,84 +66,52 @@ public class MapaAstralService {
         return "Ufa, não tem ascendente";
     }
 
-    public void mapaAstral(LocalDateTime dataHoraNascimento) {
+    public String mapaAstral(LocalDateTime dataHoraNascimento, String localDenascimento, String nome) {
 
-        localizarIdade(dataHoraNascimento);
-        buscaPorZona(dataHoraNascimento);
-        formarDataDeNascimento(dataHoraNascimento);
-
-        System.out.println("Ano Bissexto:  " + dataHoraNascimento.toLocalDate().isLeapYear());
-        System.out.println("Signo: " + buscaPorSigno(dataHoraNascimento.toLocalDate()));
-
-
-        buscaPorAcendente(dataHoraNascimento);
-
-        System.out.println("####################");
+            return MapaQuantico.builder()
+                .nome(nome)
+                .signo(buscaPorSigno(dataHoraNascimento.toLocalDate()))
+                .ascendente(buscaPorAcendente(dataHoraNascimento))
+                .localNascimento(localDenascimento)
+                .horaNascimento(dataHoraNascimento)
+                .idade(localizarIdade(dataHoraNascimento))
+                .build().toString();
     }
 
-    private void localizarIdade(LocalDateTime dataHoraNascimento) {
+    private Integer localizarIdade(LocalDateTime dataHoraNascimento) {
         Period idade = Period.between(dataHoraNascimento.toLocalDate(), LocalDate.now());
-        System.out.println("idade: " + idade.getYears());
+
+        return idade.getYears();
+    }
+
+    private String buscaPorZona(String localDenascimento) {
+        if(!ZoneId.getAvailableZoneIds().contains(localDenascimento)){
+            return ZoneId.of("America/Sao_Paulo").toString();
+
+       }
+        return ZoneId.of(localDenascimento).toString();
 
     }
 
-    private void buscaPorZona(LocalDateTime dataHoraNascimento) {
-        ZoneId zoneId = ZoneId.of("America/Recife");
-        System.out.println(zoneId);
-        ZoneOffset currentOffsetForMyZone = zoneId.getRules().getOffset(dataHoraNascimento);
-        System.out.println(currentOffsetForMyZone);
-    }
-
-    private void formarDataDeNascimento(LocalDateTime dataHoraNascimento) {
+    private String formarDataDeNascimento(LocalDateTime dataHoraNascimento) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         DateTimeFormatter formatter1 = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
-        String format = formatter.format(dataHoraNascimento);
-        System.out.println(format);
+        return formatter.format(dataHoraNascimento);
     }
 
-    private void buscaPorAcendente(LocalDateTime dataHoraNascimento) {
+    private String buscaPorAcendente(LocalDateTime dataHoraNascimento) {
 
         if (dataHoraNascimento.getYear() > 1976) {
-            System.out.println("Ascendente: " + procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime().minusHours(2)));
+            return procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime().minusHours(2));
         } else if (dataHoraNascimento.getYear() > 1946 && dataHoraNascimento.getYear() < 1975) {
-            System.out.println("Ascendente: " + procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime().minusHours(2)));
+            return procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime().minusHours(2));
         } else {
-            System.out.println("Ascendente: " + procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime()));
+            return procurarAscendente(buscaPorSigno(dataHoraNascimento.toLocalDate()), dataHoraNascimento.toLocalTime());
 
         }
 
     }
 
-    public String localizarSingnoLunar(LocalTime time, String localNascimento) {
-        Set<String> zones = ZoneId.getAvailableZoneIds();
-        for (String s : zones) {
-            if (s.contains((localNascimento))) {
-                ZoneId zoneID = ZoneId.of(s);
-                System.out.println(zoneID);
-
-                if (zoneID.toString().equals("America/Recife") && time.isAfter(LocalTime.NOON)) {
-                    return "Casimiro";
-                }
-
-                if (zoneID.toString().equals("America/Cuiaba") && time.isAfter(LocalTime.NOON)) {
-                    return "Odin";
-                }
-                if (zoneID.toString().equals("America/Sao_Paulo")) {
-                    return "Gandalf";
-                }
-            }
-        }
-        return "Dinossauro";
 
     }
-}
 
-
-/*
--- singnoLunar
-- Se a pessoa nasceu Em Recife e depois das 12h00, deve  retornar "Casimiro"
-- Se a pessoa nasceu Em Cuiaba e antes das 12h00, deve  retornar "Odin"
-- Se a pessoa nasceu Em São Paulo (não importa o horario), deve retornar "Gandalf"
-- Em qualquer outro caso, deve retornar: "Dinossauro"
-
- */
